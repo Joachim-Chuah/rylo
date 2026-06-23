@@ -188,6 +188,31 @@ async def get_market_overview() -> MarketOverview:
     return result
 
 
+@router.get("/prices")
+async def get_prices(tickers: str):
+    """Batch current price + daily change% for comma-separated tickers."""
+    import asyncio
+    import yfinance as yf
+
+    ticker_list = [t.strip().upper() for t in tickers.split(',') if t.strip()][:20]
+
+    def fetch():
+        result = {}
+        for t in ticker_list:
+            try:
+                info = yf.Ticker(t).fast_info
+                price = float(info.last_price or 0)
+                prev  = float(info.previous_close or 0)
+                change_pct = round((price - prev) / prev * 100, 2) if prev else 0.0
+                result[t] = {"price": round(price, 2), "change_pct": change_pct}
+            except Exception:
+                result[t] = None
+        return result
+
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, fetch)
+
+
 @router.get("/sparkline/{ticker}")
 async def get_sparkline(ticker: str):
     """30-day daily close prices for sparkline charts."""

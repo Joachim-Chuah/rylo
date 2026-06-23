@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { HouseIcon, PanelsTopLeftIcon, SettingsIcon, ArrowLeft } from 'lucide-react';
 
+function isMarketOpen(now) {
+  const et = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }))
+  const day = et.getDay()
+  if (day === 0 || day === 6) return false
+  const h = et.getHours(), m = et.getMinutes()
+  const mins = h * 60 + m
+  return mins >= 9 * 60 + 30 && mins < 16 * 60
+}
+
 function LiveClock() {
   const [now, setNow] = useState(new Date())
   useEffect(() => {
@@ -9,10 +18,23 @@ function LiveClock() {
   }, [])
   const date = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
   const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  const open = isMarketOpen(now)
   return (
-    <div className="absolute right-6 bottom-2.5 text-right leading-tight" style={{ color: 'var(--text-muted)' }}>
-      <div className="text-[11px] font-mono">{time}</div>
-      <div className="text-[10px] opacity-60">{date}</div>
+    <div className="absolute right-6 bottom-2 text-right leading-tight flex flex-col items-end gap-1">
+      <span
+        className="text-[10px] font-medium px-1.5 py-0.5 rounded-full"
+        style={{
+          background: open ? 'rgba(34,197,94,0.12)' : 'rgba(107,114,128,0.12)',
+          color: open ? '#16a34a' : 'var(--text-muted)',
+          border: `1px solid ${open ? 'rgba(34,197,94,0.25)' : 'var(--border)'}`,
+        }}
+      >
+        {open ? '● Market Open' : '○ Market Closed'}
+      </span>
+      <div style={{ color: 'var(--text-muted)' }}>
+        <div className="text-[11px] font-mono">{time}</div>
+        <div className="text-[10px] opacity-60">{date}</div>
+      </div>
     </div>
   )
 }

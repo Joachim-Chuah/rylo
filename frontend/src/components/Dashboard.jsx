@@ -321,6 +321,9 @@ const TickerRow = ({ item, onClick }) => {
     const Icon    = cfg.icon;
     const bullPct = item.total_posts > 0 ? Math.round((item.bullish_count / item.total_posts) * 100) : 0;
     const bearPct = item.total_posts > 0 ? Math.round((item.bearish_count / item.total_posts) * 100) : 0;
+    const price   = item.price;
+    const chgPct  = item.change_pct;
+    const chgPos  = chgPct >= 0;
 
     return (
         <button onClick={() => onClick(item.ticker)}
@@ -360,6 +363,20 @@ const TickerRow = ({ item, onClick }) => {
                 <span style={{ color: 'var(--text-muted)', minWidth: 52 }}>{item.total_posts} posts</span>
             </div>
 
+            {/* Price */}
+            <div className="flex-shrink-0 text-right w-24">
+                {price != null ? (
+                    <>
+                        <div className="text-xs font-mono font-semibold" style={{ color: 'var(--text)' }}>${price.toFixed(2)}</div>
+                        <div className="text-[11px] font-mono" style={{ color: chgPos ? '#16a34a' : '#dc2626' }}>
+                            {chgPos ? '+' : ''}{chgPct.toFixed(2)}%
+                        </div>
+                    </>
+                ) : (
+                    <div className="text-xs" style={{ color: 'var(--text-muted)', opacity: 0.4 }}>—</div>
+                )}
+            </div>
+
             <ChevronRight size={13} style={{ color: 'var(--text-muted)', flexShrink: 0, opacity: 0.4 }} />
         </button>
     );
@@ -378,8 +395,16 @@ const OverviewPanel = ({ onSelectTicker, watchlist = [], removeFromWatchlist }) 
         setOverviewError(null);
         try {
             const tickers = await fetchTrendingTickers(10);
-            const data    = await fetchStockTwitsOverview(api, tickers);
-            setOverview(data);
+            const [data, pricesRes] = await Promise.all([
+                fetchStockTwitsOverview(api, tickers),
+                api.get(`/market/prices?tickers=${tickers.join(',')}`).catch(() => ({ data: {} })),
+            ]);
+            const prices = pricesRes.data || {};
+            setOverview(data.map(item => ({
+                ...item,
+                price:      prices[item.ticker]?.price      ?? null,
+                change_pct: prices[item.ticker]?.change_pct ?? null,
+            })));
         } catch {
             setOverviewError('Failed to load market sentiment.');
         } finally {
@@ -504,6 +529,7 @@ const OverviewPanel = ({ onSelectTicker, watchlist = [], removeFromWatchlist }) 
                     <span className="w-20 flex-shrink-0 text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Signal</span>
                     <span className="flex-1 text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Sentiment</span>
                     <span className="flex-shrink-0 text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)', minWidth: 156 }}>Stats</span>
+                    <span className="w-24 flex-shrink-0 text-xs font-medium uppercase tracking-wider text-right" style={{ color: 'var(--text-muted)' }}>Price</span>
                     <span className="w-4 flex-shrink-0" />
                 </div>
 
