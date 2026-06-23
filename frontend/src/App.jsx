@@ -1,5 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { HouseIcon, PanelsTopLeftIcon, SettingsIcon, ArrowLeft } from 'lucide-react';
+
+function LiveClock() {
+  const [now, setNow] = useState(new Date())
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(id)
+  }, [])
+  const date = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+  const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  return (
+    <div className="absolute right-6 bottom-2.5 text-right leading-tight" style={{ color: 'var(--text-muted)' }}>
+      <div className="text-[11px] font-mono">{time}</div>
+      <div className="text-[10px] opacity-60">{date}</div>
+    </div>
+  )
+}
 import { Tabs, TabsList, TabsTab, TabsPanel } from './components/ui/tabs';
 import PageBackground from './components/PageBackground';
 import FloatingChat from './components/FloatingChat';
@@ -170,9 +186,10 @@ export default function App() {
         <Tabs value={activeTab} onValueChange={handleTabChange}>
           {/* ── Tab bar ──────────────────────────────────── */}
           <div
-            className="sticky top-0 z-20 flex justify-center border-b pt-8 pb-0"
+            className="relative sticky top-0 z-20 flex justify-center border-b pt-8 pb-0"
             style={{ background: 'var(--bg)', borderColor: 'var(--border)' }}
           >
+            <LiveClock />
             <TabsList variant="underline" className="px-0">
               <TabsTab value="overview">
                 <HouseIcon aria-hidden="true" />
